@@ -1,0 +1,132 @@
+---
+title: "Assignment 1"
+---
+
+This repository contains my submission for Assignment 1.
+
+1.  **Anscombe’s quartet**
+
+```{r}
+options(repos = c(CRAN = "https://cran.rstudio.com/"))
+data(anscombe)  # Load Anscombe's data
+View(anscombe) # View the data
+summary(anscombe)
+
+## Simple version
+plot(anscombe$x1,anscombe$y1)
+summary(anscombe)
+
+# Create four model objects
+lm1 <- lm(y1 ~ x1, data=anscombe)
+summary(lm1)
+lm2 <- lm(y2 ~ x2, data=anscombe)
+summary(lm2)
+lm3 <- lm(y3 ~ x3, data=anscombe)
+summary(lm3)
+lm4 <- lm(y4 ~ x4, data=anscombe)
+summary(lm4)
+plot(anscombe$x1,anscombe$y1)
+abline(coefficients(lm1))
+plot(anscombe$x2,anscombe$y2)
+abline(coefficients(lm2))
+plot(anscombe$x3,anscombe$y3)
+abline(coefficients(lm3))
+plot(anscombe$x4,anscombe$y4)
+abline(coefficients(lm4))
+```
+
+2.  **Generative Art (Fall Color)**
+
+```{r}
+install.packages("ggplot2")
+library(ggplot2)
+n <- 100
+angles <- seq(0, 2*pi, length.out = n)
+x <- cos(angles)
+y <- sin(angles)
+df <- data.frame(
+  x = x * seq(0.1, 1, length.out = n),
+  y = y * seq(0.1, 1, length.out = n),
+  size = seq(1, 10, length.out = n)
+)
+ggplot(df, aes(x = x, y = y)) +
+  geom_point(aes(size = size), shape = 21, fill = "lightblue", color = "black", alpha = 0.6) +
+  theme_void() + 
+  coord_fixed()
+
+```
+
+3.  **Run Fall.R**
+
+```{r}
+# Install packages
+install.packages(c("gsubfn", "proto", "tidyverse"))
+
+library(gsubfn)
+library(tidyverse)
+
+# Define elements in plant art
+# Each image corresponds to a different axiom, rules, angle and depth
+
+# Leaf of Winter (Modified)
+axiom="X"
+rules=list("X"="F-[[X]+X]+F[+FX]-X", "F"="FF")
+angle=22.5
+depth=6
+
+for (i in 1:depth) axiom=gsubfn(".", rules, axiom)
+
+actions=str_extract_all(axiom, "\\d*\\+|\\d*\\-|F|L|R|\\[|\\]|\\|") %>% unlist
+
+status=data.frame(x=numeric(0), y=numeric(0), alfa=numeric(0))
+points=data.frame(x1 = 0, y1 = 0, x2 = NA, y2 = NA, alfa=90, depth=1)
+
+# Generating data
+for (action in actions)
+{
+  if (action=="F")
+  {
+    x=points[1, "x1"]+cos(points[1, "alfa"]*(pi/180))
+    y=points[1, "y1"]+sin(points[1, "alfa"]*(pi/180))
+    points[1,"x2"]=x
+    points[1,"y2"]=y
+    data.frame(x1 = x, y1 = y, x2 = NA, y2 = NA,
+               alfa=points[1, "alfa"],
+               depth=points[1,"depth"]) %>% rbind(points)->points
+  }
+  if (action %in% c("+", "-")){
+    alfa=points[1, "alfa"]
+    points[1, "alfa"]=eval(parse(text=paste0("alfa",action, angle)))
+  }
+  if(action=="["){
+    data.frame(x=points[1, "x1"], y=points[1, "y1"], alfa=points[1, "alfa"]) %>%
+      rbind(status) -> status
+    points[1, "depth"]=points[1, "depth"]+1
+  }
+
+  if(action=="]"){
+    depth=points[1, "depth"]
+    points[-1,]->points
+    data.frame(x1=status[1, "x"], y1=status[1, "y"], x2=NA, y2=NA,
+               alfa=status[1, "alfa"],
+               depth=depth-1) %>%
+      rbind(points) -> points
+    status[-1,]->status
+  }
+}
+
+# Plot with Winter Color Palette
+ggplot() +
+  geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2),
+               lineend = "round",
+               color="lightblue", # Winter color theme (modified)
+               data=na.omit(points)) +
+  coord_fixed(ratio = 1) +
+  theme_void() # No grid nor axes
+```
+
+4.  **Chart Critique**
+
+Chart Critique: "U.S. Unemployment Rate by Race" from the New York Times Source: New York Times Chart Type: Line Chart
+
+Strengths: Clear Trend Representation: Effectively shows changes in unemployment rates over time for different racial groups. Distinct Colors: Colors clearly differentiate the racial groups. Appropriate Time-Series Chart: Suitable for visualizing unemployment trends over several years. Areas for Improvement: Overlapping Lines: Similar unemployment rates across groups cause overlap, making it hard to distinguish lines. Lack of Data Markers: Adding markers at key points (e.g., during the COVID-19 spike) would enhance readability. Legend Placement: The distant legend forces viewers to switch focus between the chart and legend. Axes Labels: More granular y-axis labels (e.g., showing increments of 0.5%) would improve precision. Suggested Improvements: Add data markers and reduce line overlap with transparency or alternative line styles. Move the legend closer to the chart or label lines directly for easier interpretation. Include more precise axis labels for clearer comparisons.
